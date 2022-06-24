@@ -2,10 +2,35 @@ import Head from 'next/head'
 import characters from '../api/characters'
 import clientPromise from '../lib/mongodb'
 
+
+class Character {
+  constructor(blob) {
+    this.character = blob['character'][0]
+
+    this.name = this.character['character_name']
+    this.race = this.character['race']
+    this.class = this.character['classes']
+
+    console.log(this.class)
+    this.ac = this.character['ac']
+    this.hp = this.character['hp']
+  }
+
+  sayHi() {
+    return (<li key={`${this.name}`}>{`hi ${this.name}`}</li>)
+  }
+
+}
+
 export default function Home({ characters, isConnected }) {
 
+  let characterPanels = []
+
   characters = JSON.parse(characters)
-  console.log(characters)
+  characters.forEach(character => {
+    characterPanels.push(new Character(character))
+  })
+
   return (
     <div className="container">
       <Head>
@@ -19,19 +44,32 @@ export default function Home({ characters, isConnected }) {
         </h1>
 
         {isConnected ? (
-          <h2 className="subtitle">You are connected to the realm</h2>
+          <h2 className="subtitle">You are connected to the realm.</h2>
         ) : (
           <h2 className="subtitle">
-            You are NOT connected to MongoDB. Check the <code>README.md</code>{' '}
+            You are NOT connected! Check the <code>README.md</code>{' '}
             for instructions.
           </h2>
         )}
-      {characters.map(character => {
-        return (<p>hi {`${character['character'][0]['character_name']}`}</p>)
-      })}  
+
+      <ul className="list-none flex flex-wrap justify-evenly">
+        {characterPanels.map(character => {
+          return(<div className="m-10 w-1/2 border-solid border-green-500 bg-green-900 border-4 p-16">
+                  <li className="list-" key={`${character.name}`}>
+                    <p className="block">{`${character.character['race']} ${character.character['classes']}`}</p>
+                    <h2 className="text-3xl">{`${character.name}`}</h2>
+                    <p className="block font-bold text-blue-300">{`AC: ${character.ac}`}</p>
+                    <p className="block text-red-500">{`HP: ${character.hp[0].hp_max}`}</p>
+
+                  </li>
+                </div>)
+        })}
+      </ul>
       </main>
 
-      <footer>FEET</footer>
+
+
+      <footer>FOOT CLAN</footer>
 
       <style jsx>{`
         .container {
@@ -192,14 +230,6 @@ export async function getServerSideProps(context) {
     const db = client.db('rollquest')
     let characters = await db.collection('characters').find({}).toArray()
     characters = JSON.stringify(characters)
-    // `await clientPromise` will use the default database passed in the MONGODB_URI
-    // However you can use another database (e.g. myDatabase) by replacing the `await clientPromise` with the following code:
-    //
-    // `const client = await clientPromise`
-    // `const db = client.db("myDatabase")`
-    //
-    // Then you can execute queries against your database like so:
-    // db.find({}) or any of the MongoDB Node Driver commands
 
     return {
       props: { characters: characters,
